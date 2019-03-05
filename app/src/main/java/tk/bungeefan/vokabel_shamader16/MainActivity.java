@@ -65,7 +65,6 @@ public class MainActivity extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 prefs.edit().putInt("sort_preferences", position).apply();
                 sortData();
-
             }
 
             @Override
@@ -139,9 +138,9 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void addVocab(String firstWord, String secondWord) {
-        addVocab(de_en, firstWord, secondWord);
-        addVocab(en_de, secondWord, firstWord);
+    private void addVocab(String germanWord, String englishWord) {
+        addVocab(de_en, germanWord, englishWord);
+        addVocab(en_de, englishWord, germanWord);
     }
 
     private void addVocab(Map<String, List<String>> map, String firstWord, String secondWord) {
@@ -160,7 +159,8 @@ public class MainActivity extends AppCompatActivity {
         for (Map.Entry<String, List<String>> entry : (spinner.getSelectedItemPosition() == 0 ? de_en : en_de).entrySet()) {
             vocabList.add(entry.getKey() + ": " + String.join(", ", entry.getValue()));
         }
-        adapter.notifyDataSetChanged();
+//        adapter.notifyDataSetChanged();
+        adapter.sort((o1, o2) -> ((String) o1).compareTo((String) o2));
     }
 
     private boolean existsData() {
@@ -174,10 +174,12 @@ public class MainActivity extends AppCompatActivity {
             vocabList.clear();
             while (in.ready()) {
                 String[] split = in.readLine().split(";");
-                String germanWord = split[0];
-                String englishWord = split[1];
+                if (split.length >= 2) {
+                    String germanWord = split[0];
+                    String englishWord = split[1];
 
-                addVocab(germanWord, englishWord);
+                    addVocab(germanWord, englishWord);
+                }
             }
         } catch (IOException exp) {
             Log.d(TAG, Log.getStackTraceString(exp));
@@ -186,10 +188,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void writeData() {
         try (PrintWriter out = new PrintWriter(new OutputStreamWriter(openFileOutput(FILE_NAME, MODE_PRIVATE)))) {
+            for (Map.Entry<String, List<String>> entry : de_en.entrySet()) {
+                for (String string : entry.getValue()) {
+                    out.println(entry.getKey() + ";" + string);
+                }
+            }
             out.println();
-//            for (Note note : notes) {
-//                out.println(note.toCSVString().replace("\n", "\\newline"));
-//            }
         } catch (FileNotFoundException exp) {
             Log.d(TAG, Log.getStackTraceString(exp));
         }
