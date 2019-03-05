@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="sort_setting">
+        <item>Deutsch - Englisch</item>
+        <item>Englisch - Deutsch</item>
+    </string-array>
+</resources>
