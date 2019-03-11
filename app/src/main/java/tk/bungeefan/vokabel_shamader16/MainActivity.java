@@ -11,8 +11,10 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.SearchView;
 import android.widget.Spinner;
 
 import java.io.BufferedReader;
@@ -33,9 +35,9 @@ public class MainActivity extends AppCompatActivity {
     private static final String FILE_NAME = "180a_vokabel.csv";
     private Map<String, List<String>> de_en = new HashMap<>();
     private Map<String, List<String>> en_de = new HashMap<>();
-    private List<String> vocabList = new ArrayList<>();
-    private VocableAdapter<String> adapter;
+    private ArrayAdapter<String> adapter;
     private Spinner spinner;
+    private SearchView searchView;
     private SharedPreferences prefs;
     private SharedPreferences.OnSharedPreferenceChangeListener listener = (sharedPreferences, key) -> adapter.notifyDataSetChanged();
 
@@ -56,8 +58,23 @@ public class MainActivity extends AppCompatActivity {
         } else {
             readData(getInputStreamForAsset());
         }
-        listView.setAdapter(adapter = new VocableAdapter<>(this, android.R.layout.simple_list_item_1, vocabList));
-        prefs.registerOnSharedPreferenceChangeListener(listener);
+        listView.setAdapter(adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1));
+//        prefs.registerOnSharedPreferenceChangeListener(listener);
+
+        searchView = findViewById(R.id.searchView);
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String s) {
+                adapter.getFilter().filter(s);
+                return false;
+            }
+        });
+
         spinner = findViewById(R.id.spinner);
         spinner.setSelection(prefs.getInt("sort_preferences", 0));
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -121,9 +138,9 @@ public class MainActivity extends AppCompatActivity {
                             EditText firstField = vDialog.findViewById(R.id.firstField);
                             EditText secondField = vDialog.findViewById(R.id.secondField);
                             if (prefs.getInt("sort_preferences", 0) == 0) {
-                                addVocab(firstField.getText().toString(), secondField.getText().toString());
+                                addVocab(firstField, secondField);
                             } else {
-                                addVocab(secondField.getText().toString(), firstField.getText().toString());
+                                addVocab(secondField, firstField);
                             }
                             sortData();
                         })
@@ -136,6 +153,10 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void addVocab(EditText germanText, EditText englishText) {
+        addVocab(germanText.getText().toString(), englishText.getText().toString());
     }
 
     private void addVocab(String germanWord, String englishWord) {
@@ -155,12 +176,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void sortData() {
-        vocabList.clear();
+        adapter.clear();
         for (Map.Entry<String, List<String>> entry : (spinner.getSelectedItemPosition() == 0 ? de_en : en_de).entrySet()) {
-            vocabList.add(entry.getKey() + ": " + String.join(", ", entry.getValue()));
+            adapter.add(entry.getKey() + ": " + String.join(", ", entry.getValue()));
         }
-//        adapter.notifyDataSetChanged();
-        adapter.sort((o1, o2) -> ((String) o1).compareTo((String) o2));
+        adapter.sort(String::compareTo);
+        adapter.getFilter().filter(null);
     }
 
     private boolean existsData() {
@@ -171,7 +192,6 @@ public class MainActivity extends AppCompatActivity {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(inputStream))) {
             de_en.clear();
             en_de.clear();
-            vocabList.clear();
             while (in.ready()) {
                 String[] split = in.readLine().split(";");
                 if (split.length >= 2) {
