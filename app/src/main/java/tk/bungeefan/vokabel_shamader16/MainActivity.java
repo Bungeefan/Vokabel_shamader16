@@ -39,7 +39,6 @@ public class MainActivity extends AppCompatActivity {
     private Spinner spinner;
     private SearchView searchView;
     private SharedPreferences prefs;
-    private SharedPreferences.OnSharedPreferenceChangeListener listener = (sharedPreferences, key) -> adapter.notifyDataSetChanged();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +58,6 @@ public class MainActivity extends AppCompatActivity {
             readData(getInputStreamForAsset());
         }
         listView.setAdapter(adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1));
-//        prefs.registerOnSharedPreferenceChangeListener(listener);
 
         searchView = findViewById(R.id.searchView);
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
